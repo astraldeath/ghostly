@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Ghostly",
+  "version": "1.2.2",
+  "description": "Automatically remove matching Firefox history with site rules, protected sites, and retention.",
+  "permissions": ["history", "storage", "alarms"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": { "scripts": ["background/index.js"], "type": "module" },
+  "icons": { "48": "assets/icon.svg", "96": "assets/icon.svg" },
+  "action": {
+    "default_title": "Ghostly",
+    "default_popup": "popup/index.html",
+    "default_icon": "assets/icon.svg"
+  },
+  "options_ui": { "page": "options/index.html", "open_in_tab": true },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ghostly@extensions.invalid",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  }
+}

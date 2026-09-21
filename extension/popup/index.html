@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ghostly</title>
+    <link rel="stylesheet" href="../shared/styles.css" />
+    <script type="module" src="index.js"></script>
+  </head>
+  <body class="popup">
+    <header class="app-header">
+      <a class="brand" href="../options/index.html" id="brand-link"
+        ><svg class="icon brand-icon" aria-hidden="true">
+          <use href="../assets/lucide.svg#ghost"></use></svg
+        >Ghostly</a
+      ><button
+        id="settings"
+        class="icon-button"
+        aria-label="Settings"
+        title="Settings"
+      >
+        <svg class="icon" aria-hidden="true">
+          <use href="../assets/lucide.svg#settings-2"></use>
+        </svg>
+      </button>
+    </header>
+    <div class="popup-control">
+      <div>
+        <span class="control-label">Automatic cleanup</span
+        ><span id="status-pill" class="status">Loading</span>
+      </div>
+      <button
+        id="toggle"
+        class="switch"
+        role="switch"
+        aria-checked="false"
+        aria-label="Automatic cleanup"
+        disabled
+      ></button>
+    </div>
+    <dl class="stats-strip" aria-label="Cleanup statistics">
+      <div>
+        <dt title="Includes automatic per-visit removals">URLs removed</dt>
+        <dd id="stats-deleted">0</dd>
+      </div>
+      <div>
+        <dt title="Completed full cleanup runs">Cleanups</dt>
+        <dd id="stats-runs">0</dd>
+      </div>
+      <div>
+        <dt title="URLs removed in the last successful cleanup">
+          Last cleanup
+        </dt>
+        <dd id="stats-last-count">0</dd>
+      </div>
+      <div class="stats-date">
+        <dt>Last completed</dt>
+        <dd id="stats-last-time">Never</dd>
+      </div>
+    </dl>
+    <div id="message" role="status" hidden></div>
+    <button class="primary preview-action" id="preview">
+      <svg class="icon" aria-hidden="true">
+        <use href="../assets/lucide.svg#scan-eye"></use></svg
+      >Review history<svg class="icon trailing" aria-hidden="true">
+        <use href="../assets/lucide.svg#arrow-right"></use>
+      </svg>
+    </button>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Enable automatic cleanup?</h2>
+      <p>
+        Deletes matching new visits immediately and runs saved rules and
+        retention every 15 minutes. Deletion is permanent.
+      </p>
+      <div class="row dialog-actions">
+        <button id="cancel">Cancel</button
+        ><button id="enable" class="primary">Enable</button>
+      </div>
+    </dialog>
+  </body>
+</html>

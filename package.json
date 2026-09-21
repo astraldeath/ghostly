@@ -1,0 +1,31 @@
+{
+  "name": "ghostly",
+  "version": "1.2.2",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "lint": "eslint extension scripts tests && web-ext lint --source-dir extension --warnings-as-errors",
+    "format": "prettier --write extension scripts tests package.json eslint.config.js .github",
+    "format:check": "prettier --check extension scripts tests package.json eslint.config.js .github",
+    "check": "npm run test && npm run lint && npm run format:check",
+    "dev": "web-ext run --source-dir extension",
+    "preview": "node scripts/preview.mjs",
+    "package": "npm run check && node scripts/package.mjs",
+    "test:firefox": "node scripts/firefox-smoke.mjs"
+  },
+  "devDependencies": {
+    "eslint": "10.11.0",
+    "lucide-static": "1.47.0",
+    "prettier": "3.9.8",
+    "web-ext": "10.6.0",
+    "yauzl": "3.4.0"
+  },
+  "overrides": {
+    "image-size": "2.0.4"
+  }
+}

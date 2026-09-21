@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ghostly settings</title>
+    <link rel="icon" href="../assets/icon.svg" />
+    <link rel="stylesheet" href="../shared/styles.css" />
+    <script type="module" src="index.js"></script>
+  </head>
+  <body>
+    <main class="settings-page">
+      <header class="app-header">
+        <h1 class="brand">
+          <svg class="icon brand-icon" aria-hidden="true">
+            <use href="../assets/lucide.svg#ghost"></use></svg
+          >Ghostly
+        </h1>
+        <div class="automation">
+          <span id="status-pill" class="status">Loading</span
+          ><button
+            id="toggle"
+            class="switch"
+            role="switch"
+            aria-checked="false"
+            aria-label="Automatic cleanup"
+            title="Automatic cleanup"
+            disabled
+          ></button>
+        </div>
+      </header>
+      <dl class="stats-strip" aria-label="Cleanup statistics">
+        <div>
+          <dt title="Includes automatic per-visit removals">URLs removed</dt>
+          <dd id="stats-deleted">0</dd>
+        </div>
+        <div>
+          <dt title="Completed full cleanup runs">Cleanups</dt>
+          <dd id="stats-runs">0</dd>
+        </div>
+        <div>
+          <dt title="URLs removed in the last successful cleanup">
+            Last cleanup
+          </dt>
+          <dd id="stats-last-count">0</dd>
+        </div>
+        <div class="stats-date">
+          <dt>Last completed</dt>
+          <dd id="stats-last-time">Never</dd>
+        </div>
+      </dl>
+      <nav class="tabs" aria-label="Settings sections">
+        <button data-panel="rules" aria-current="page">Rules</button
+        ><button data-panel="preview">Cleanup</button
+        ><button data-panel="backup">Settings</button>
+      </nav>
+      <div id="message" role="status" aria-live="polite" hidden></div>
+      <section
+        id="panel-rules"
+        class="panel-section"
+        aria-labelledby="rules-heading"
+      >
+        <div class="section-heading row between">
+          <div class="row">
+            <h2 id="rules-heading">Delete matching history</h2>
+            <button
+              class="icon-button"
+              popovertarget="rule-help"
+              aria-label="How rules work"
+              title="How rules work"
+            >
+              <svg class="icon" aria-hidden="true">
+                <use href="../assets/lucide.svg#info"></use>
+              </svg>
+            </button>
+          </div>
+          <button id="add-list" class="small-button">
+            <svg class="icon" aria-hidden="true">
+              <use href="../assets/lucide.svg#plus"></use></svg
+            >New list
+          </button>
+        </div>
+        <div id="rule-help" class="help-popover" popover>
+          <h3>Rule types</h3>
+          <p><strong>Domain</strong> matches a site and its subdomains.</p>
+          <p>
+            <strong>Wildcard</strong> matches anywhere in a URL;
+            <code>*</code> matches any text.
+          </p>
+          <p>
+            <strong>Regex</strong> uses a case-insensitive JavaScript
+            expression.
+          </p>
+          <p>Protected sites are always kept.</p>
+        </div>
+        <div id="lists"></div>
+        <details class="disclosure">
+          <summary>
+            <span>Add online list</span
+            ><svg class="icon chevron" aria-hidden="true">
+              <use href="../assets/lucide.svg#chevron-down"></use>
+            </svg>
+          </summary>
+          <div class="disclosure-body">
+            <div class="row test-row">
+              <input
+                id="subscription-url"
+                type="url"
+                aria-label="Online list URL"
+                placeholder="https://example.com/list.json"
+              /><button id="subscribe">Load list</button>
+            </div>
+            <p class="help">
+              Ghostly JSON or one domain per line. Updates are checked daily and
+              require review. The list host receives your IP address; your
+              history stays in Firefox.
+            </p>
+          </div>
+        </details>
+        <details class="disclosure" id="test-disclosure">
+          <summary>
+            <span class="row"
+              ><svg class="icon" aria-hidden="true">
+                <use href="../assets/lucide.svg#search"></use></svg
+              >Test a URL</span
+            ><svg class="icon chevron" aria-hidden="true">
+              <use href="../assets/lucide.svg#chevron-down"></use>
+            </svg>
+          </summary>
+          <div class="disclosure-body">
+            <div class="row test-row">
+              <input
+                id="test-url"
+                type="url"
+                aria-label="Website URL"
+                placeholder="https://example.com/page"
+              /><button id="test-rule">Test</button>
+            </div>
+            <p id="test-result" role="status" class="help">
+              Uses your current edits. Nothing is deleted.
+            </p>
+          </div>
+        </details>
+        <details class="disclosure" id="protected-disclosure">
+          <summary>
+            <span class="row"
+              ><svg class="icon" aria-hidden="true">
+                <use href="../assets/lucide.svg#shield"></use></svg
+              >Protected sites</span
+            ><svg class="icon chevron" aria-hidden="true">
+              <use href="../assets/lucide.svg#chevron-down"></use>
+            </svg>
+          </summary>
+          <div class="disclosure-body">
+            <p class="help">Never removed by rules or retention.</p>
+            <div id="exclusions"></div>
+            <button id="add-exclusion" class="text-button">
+              <svg class="icon" aria-hidden="true">
+                <use href="../assets/lucide.svg#plus"></use></svg
+              >Add site
+            </button>
+          </div>
+        </details>
+        <details class="disclosure" id="retention-disclosure">
+          <summary>
+            <span class="row"
+              ><svg class="icon" aria-hidden="true">
+                <use href="../assets/lucide.svg#clock"></use></svg
+              >History retention</span
+            ><svg class="icon chevron" aria-hidden="true">
+              <use href="../assets/lucide.svg#chevron-down"></use>
+            </svg>
+          </summary>
+          <div class="disclosure-body">
+            <div class="row between">
+              <label for="retention-enabled">Remove old history</label
+              ><input
+                class="switch-input"
+                type="checkbox"
+                id="retention-enabled"
+                role="switch"
+              />
+            </div>
+            <div class="row retention-field">
+              <label for="retention-days">Not visited in</label
+              ><input
+                id="retention-days"
+                type="number"
+                min="1"
+                max="36500"
+                step="1"
+                value="30"
+              /><span>days</span>
+            </div>
+            <p class="help">
+              Removes all visits to older URLs. Recently revisited and protected
+              URLs are kept.
+            </p>
+          </div>
+        </details>
+      </section>
+      <section
+        id="panel-preview"
+        class="panel-section"
+        aria-labelledby="preview-heading"
+        hidden
+      >
+        <div class="section-heading">
+          <h2 id="preview-heading">Clean existing history</h2>
+          <p class="help">Review matches before deleting.</p>
+        </div>
+        <div class="row preview-controls">
+          <select id="preview-mode" aria-label="Cleanup scope">
+            <option value="both">Rules and retention</option>
+            <option value="patterns">Rules only</option>
+            <option value="age">Retention only</option></select
+          ><button id="preview-button" class="primary">
+            <svg class="icon" aria-hidden="true">
+              <use href="../assets/lucide.svg#scan-eye"></use></svg
+            >Preview
+          </button>
+        </div>
+        <p class="help" id="preview-help"></p>
+        <div id="preview-results" hidden>
+          <h3 class="result-heading">
+            <span id="preview-count">0</span> matching URLs
+          </h3>
+          <p class="help" id="preview-detail"></p>
+          <ul id="preview-list" class="preview-list"></ul>
+          <p class="help">
+            Deletion removes all visits to matching URLs and cannot be undone.
+          </p>
+          <button id="clean-button" class="danger" disabled>
+            Delete matches
+          </button>
+        </div>
+      </section>
+      <section
+        id="panel-backup"
+        class="panel-section"
+        aria-labelledby="settings-heading"
+        hidden
+      >
+        <h2 id="settings-heading" class="sr-only">Settings</h2>
+        <div class="setting-row">
+          <label for="theme">Theme</label
+          ><select id="theme">
+            <option value="system">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <div class="setting-row backup-row">
+          <div>
+            <h3>Backup</h3>
+            <p class="help">Rules and settings only. No history.</p>
+          </div>
+          <div class="row">
+            <button id="import" class="small-button">
+              <svg class="icon" aria-hidden="true">
+                <use href="../assets/lucide.svg#upload"></use></svg
+              >Import</button
+            ><button id="export" class="small-button">
+              <svg class="icon" aria-hidden="true">
+                <use href="../assets/lucide.svg#download"></use></svg
+              >Export
+            </button>
+          </div>
+          <input
+            id="import-file"
+            type="file"
+            accept=".json,application/json"
+            hidden
+          />
+        </div>
+        <p class="help settings-note">All processing stays in Firefox.</p>
+      </section>
+      <footer id="savebar" class="savebar" hidden>
+        <span id="save-note" role="status">Unsaved changes</span>
+        <div class="row">
+          <button id="discard">Discard</button
+          ><button id="save" class="primary">Save</button>
+        </div>
+      </footer>
+    </main>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Confirm</h2>
+      <p id="confirm-copy"></p>
+      <div class="row dialog-actions">
+        <button id="confirm-cancel">Cancel</button
+        ><button id="confirm-accept" class="primary">Continue</button>
+      </div>
+    </dialog>
+  </body>
+</html>
