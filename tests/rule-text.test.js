@@ -5,6 +5,20 @@ import {
   parseRuleText,
 } from "../extension/shared/rule-text.js";
 
+test("text editor ignores full-line comments without stripping literal hashes", () => {
+  assert.deepEqual(
+    parseRuleText(
+      "# comment\n  # regex: [\n*example.com/#section*\nregex: foo#bar\n",
+    ),
+    [
+      { type: "wildcard", value: "*example.com/#section*" },
+      { type: "regex", value: "foo#bar" },
+    ],
+  );
+  assert.deepEqual(parseRuleText("# only comments\n  # another"), []);
+  assert.throws(() => parseRuleText("# comment\n\nregex: ["), /Line 3/);
+});
+
 test("text editor roundtrip preserves every rule type and literal prefix", () => {
   const rules = [
     { type: "domain", value: "example.com" },

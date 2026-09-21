@@ -8,7 +8,7 @@ export function parseRuleText(text) {
   const rules = [];
   for (const [index, line] of text.split(/\r?\n/).entries()) {
     const value = line.trim();
-    if (!value) continue;
+    if (!value || value.startsWith("#")) continue;
     const explicit = /^(domain|wildcard|regex):\s*(.*)$/.exec(value);
     const rule = explicit
       ? { type: explicit[1], value: explicit[2].trim() }

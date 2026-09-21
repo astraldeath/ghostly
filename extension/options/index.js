@@ -269,7 +269,7 @@ function listCard(
       element(
         "p",
         { id: helpId, class: "help" },
-        "One rule per line. Plain text matches anywhere in a URL; * matches any text. Use domain: for sites or regex: for regular expressions.",
+        "One rule per line; lines starting with # are ignored. Plain text matches anywhere in a URL; * matches any text. Use domain: for sites or regex: for regular expressions.",
       ),
     );
     const setMode = (mode) => {

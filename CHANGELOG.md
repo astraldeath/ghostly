@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Ignore full-line `#` comments in the text rule editor, including indented comments. Literal hashes within rules remain unchanged.
+
 ## 1.2.2
 
 - Show statistics above the settings tabs and in the extension popup.
