@@ -13,12 +13,16 @@ import {
   validateSettings,
   parseBackup,
 } from "../extension/shared/settings.js";
+import { parseRuleText } from "../extension/shared/rule-text.js";
 
-test("online lists accept explicit rules or domains without guessing filter syntax", () => {
+test("online lists use the text editor syntax", () => {
   assert.deepEqual(
     parseList("# comment\nexample.com\nexample.com\n! comment").rules,
-    [{ type: "domain", value: "example.com" }],
+    [{ type: "wildcard", value: "example.com" }],
   );
+  const text =
+    "# comment\n! comment\ndomain: example.com\n*example.com/path*\nre: foo.*\n/bar/\n^https://example\\.com\nregex: test\nwildcard: *track*";
+  assert.deepEqual(parseList(text).rules, parseRuleText(text));
   assert.equal(
     parseList(
       JSON.stringify({
@@ -30,8 +34,8 @@ test("online lists accept explicit rules or domains without guessing filter synt
     "List",
   );
   for (const text of [
-    "||example.com^",
-    "0.0.0.0 example.com",
+    "regex: [",
+    "domain: invalid/domain",
     "",
     "{bad",
     '{"version":2,"rules":[]}',

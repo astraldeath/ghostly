@@ -345,11 +345,19 @@ function listCard(
   const rules = element("div", { class: "rules" });
   setRuleRows(rules, list.rules, !!list.sourceUrl);
   const footer = element("div", { class: "list-footer row between" });
+  let useTextMode;
   const add = element("button", { class: "text-button" }, "Add rule");
   add.prepend(icon("plus"));
   add.addEventListener("click", () => {
     rules.append(ruleRow());
     markDirty();
+    if (
+      rules.querySelectorAll(".rule-row").length > ROW_EDITOR_LIMIT &&
+      useTextMode
+    ) {
+      useTextMode();
+      return;
+    }
     rules.lastElementChild.querySelector("input").focus();
   });
   const remove = element("button", {
@@ -450,6 +458,10 @@ function listCard(
       }
     };
     rowsMode.addEventListener("click", () => setMode("rows"));
+    useTextMode = () => {
+      setMode("text");
+      textarea.focus();
+    };
     textMode.addEventListener("click", () => setMode("text"));
     modes.append(rowsMode, textMode);
     body.prepend(modes);

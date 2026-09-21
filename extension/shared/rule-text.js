@@ -12,7 +12,7 @@ export function parseRuleText(text) {
   const counts = { domains: 0, patterns: 0 };
   for (const [index, line] of text.split(/\r?\n/).entries()) {
     const value = line.trim();
-    if (!value || value.startsWith("#")) continue;
+    if (!value || value.startsWith("#") || value.startsWith("!")) continue;
     const explicit = /^(domain|wildcard|regex):\s*(.*)$/.exec(value);
     const rule = explicit
       ? { type: explicit[1], value: explicit[2].trim() }

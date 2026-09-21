@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Use the same text rule syntax for online subscriptions, file imports and local editing.
+- Keep large lists in paged textbox-only mode.
+
 ## 1.3.0
 
 - Index domain lists by hostname, with up to 500,000 domains and a separate 1,000 wildcard/regex limit.

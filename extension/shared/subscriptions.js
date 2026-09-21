@@ -1,4 +1,5 @@
 import { compileRule } from "./rules.js";
+import { parseRuleText } from "./rule-text.js";
 import { checkRuleCounts, MAX_LIST_BYTES } from "./limits.js";
 export { MAX_LIST_BYTES } from "./limits.js";
 
@@ -41,16 +42,7 @@ export function parseList(text) {
     name = data.name.trim();
     rules = data.rules;
   } else {
-    rules = text
-      .split(/\r?\n/)
-      .map((x) => x.trim())
-      .filter((x) => x && !x.startsWith("#") && !x.startsWith("!"))
-      .map((value) => {
-        const explicit = /^(domain|wildcard|regex):\s*(.*)$/.exec(value);
-        return explicit
-          ? { type: explicit[1], value: explicit[2] }
-          : { type: "domain", value };
-      });
+    rules = parseRuleText(text);
   }
   if (!rules.length) throw new Error("A list must contain at least one rule.");
   checkRuleCounts(rules);

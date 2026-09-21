@@ -113,7 +113,7 @@ test("list files accept explicit domain prefixes and attribution comments", () =
     parseList("# attribution\ndomain:example.com\nplain.example.com").rules,
     [
       { type: "domain", value: "example.com" },
-      { type: "domain", value: "plain.example.com" },
+      { type: "wildcard", value: "plain.example.com" },
     ],
   );
 });
