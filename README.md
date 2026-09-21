@@ -24,6 +24,8 @@ npm run package      # checked ZIP, checksum and file inventory in artifacts/
 
 The preview uses the production UI and cleanup engine with a synthetic browser adapter. It cannot read your browser history and is never packaged.
 
+Files in `extension/` are shipped as written. Packaging validates and archives them without bundling, minification, templating, or asset generation. SVG icons are maintained directly in `extension/assets/`; retain their Lucide license when editing them.
+
 ## Behavior
 
 - New installs have no rules and start paused. Upgrades preserve legacy rules and protections but pause automation for review.

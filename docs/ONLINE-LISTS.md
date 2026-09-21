@@ -25,4 +25,4 @@ JSON accepts Ghostly domain, wildcard and regex rules. uBlock/Adblock and hosts-
 
 The development browser preview uses a synthetic subscription response; it never contacts the supplied host. Network behavior is covered separately by automated tests.
 
-Extension and toolbar icons remain SVGs derived from Lucide, with the upstream license bundled. Screenshot PNGs under docs are browser captures, not generated artwork.
+Extension and toolbar icons are static SVG assets derived from Lucide, with the upstream license bundled.

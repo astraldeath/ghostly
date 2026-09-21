@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove icon generation tooling; maintain the bundled Lucide-derived SVG assets directly.
+
 - Use the same text rule syntax for online subscriptions, file imports and local editing.
 - Keep large lists in paged textbox-only mode.
 

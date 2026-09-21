@@ -8,4 +8,4 @@ Saving does not delete history. Enabling automation explicitly authorizes immedi
 
 Regex matching runs in a local module worker with a timeout. The script is included in the package. Settings and aggregate statistics are stored locally; temporary previews stay in memory.
 
-Build: Node 24, `npm ci --ignore-scripts`, `npm run package`. Output is a ZIP whose root contains `manifest.json`. No compilation or minification is used. Development code and screenshots outside `extension/` are not distributed.
+Package: Node 24, `npm ci --ignore-scripts`, `npm run package`. Output is a ZIP whose root contains `manifest.json`. JavaScript, HTML, CSS and SVG assets are shipped directly from `extension/`, without compilation, minification, templating or asset generation. The packaging script verifies each archived file byte-for-byte against its source. Lucide-derived SVG assets are maintained directly in the repository with their upstream ISC license. Development tooling outside `extension/` is not distributed.

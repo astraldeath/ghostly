@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "eslint": "10.11.0",
-    "lucide-static": "1.47.0",
     "prettier": "3.9.8",
     "web-ext": "10.6.0",
     "yauzl": "3.4.0"
