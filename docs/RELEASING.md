@@ -4,7 +4,7 @@
 
 1. Use the MIT license from `LICENSE.md` and the repository issue tracker as the support URL. Preserve the bundled Lucide ISC attribution.
 2. Update both `package.json` and `extension/manifest.json` versions; preserve `ghostly@extensions.invalid` as the add-on ID. Firefox treats a different add-on ID as a separate extension.
-3. Update the changelog and `docs/release-notes.md`.
+3. Update the changelog.
 4. Run `npm ci --ignore-scripts`, then `npm run package`.
 5. Complete `docs/TESTING.md` in a disposable Firefox profile, including an upgrade from 1.0 with synthetic rules. Test the declared minimum Firefox version separately before advertising compatibility.
 6. Inspect the generated ZIP inventory. `manifest.json` must be at archive root. Only files from `extension/` belong in the upload. No source backup, preview adapter, screenshots, tests, dependencies, or credentials.

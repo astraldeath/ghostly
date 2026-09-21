@@ -22,7 +22,7 @@ npm run preview      # synthetic UI at http://127.0.0.1:4173
 npm run package      # checked ZIP, checksum and file inventory in artifacts/
 ```
 
-The preview uses the production UI and cleanup engine with a synthetic browser adapter. It cannot read your browser history and is never packaged. UI screenshots are in `docs/screenshots/`.
+The preview uses the production UI and cleanup engine with a synthetic browser adapter. It cannot read your browser history and is never packaged.
 
 ## Behavior
 
@@ -45,7 +45,7 @@ The preview uses the production UI and cleanup engine with a synthetic browser a
 
 Advanced regex runs in a worker with a 1.5-second evaluation deadline. Timeouts stop the operation and report an error. Keep expressions simple. Blank/invalid rules cannot be saved. An empty list or all-disabled lists never activate fallback rules.
 
-For large domain lists, use **Import list file**. Up to 500,000 domain rules are indexed by hostname; wildcard/regex rules have a separate 1,000-rule cap. See [limits and benchmarks](docs/LARGE-LISTS.md).
+For large domain lists, use **Import list file**. Up to 500,000 domain rules are indexed by hostname; wildcard/regex rules have a separate 1,000-rule cap. Large lists use only a paged textbox; they do not create a row for each rule.
 
 ## Repository map
 

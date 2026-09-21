@@ -21,7 +21,7 @@ Run `npm run preview`. This serves the production UI on localhost with a develop
 - Dark, light and narrow layouts remain readable without horizontal overflow.
 - Popup shows state and opens the settings/preview route.
 
-Screenshots in `docs/screenshots/` use synthetic data. Do not upload screenshots of a personal browsing history.
+Use synthetic data for screenshots and bug reports.
 
 ## Real Firefox — disposable profile only
 
