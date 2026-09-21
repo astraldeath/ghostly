@@ -10,7 +10,7 @@ let state;
 let pending = false;
 let enableRevision;
 async function refresh() {
-  state = await request("getState");
+  state = await request("getStatus");
   applyTheme(state.settings.theme);
   renderStats(state.stats);
   const label = statusLabel(state);

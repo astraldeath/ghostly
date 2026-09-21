@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ghostly",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "Automatically remove matching Firefox history with site rules, protected sites, and retention.",
   "permissions": ["history", "storage", "alarms"],
   "optional_host_permissions": ["https://*/*"],

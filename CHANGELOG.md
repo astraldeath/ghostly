@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
+
+- Index domain lists by hostname, with up to 500,000 domains and a separate 1,000 wildcard/regex limit.
+- Import domain list files up to 16 MiB; page large text editors and subscription views instead of rendering every rule.
+- Reuse matcher workers and keep status refreshes independent of list size.
 
 - Ignore full-line `#` comments in the text rule editor, including indented comments. Literal hashes within rules remain unchanged.
 

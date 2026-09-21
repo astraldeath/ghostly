@@ -1,3 +1,23 @@
+export function normalizeDomain(value) {
+  if (typeof value !== "string" || /[/:*?#@\s]/.test(value))
+    throw new Error("Enter a valid domain.");
+  let host;
+  try {
+    host = new URL(`https://${value}`).hostname
+      .toLowerCase()
+      .replace(/\.$/, "");
+  } catch {
+    throw new Error("Enter a valid domain.");
+  }
+  if (
+    !host.includes(".") ||
+    !/^[a-z0-9.-]+$/.test(host) ||
+    host.split(".").some((x) => !x || x.startsWith("-") || x.endsWith("-"))
+  )
+    throw new Error("Enter a valid domain.");
+  return host;
+}
+
 export function compileRule(rule) {
   if (!rule || typeof rule.value !== "string")
     throw new Error("Rule must contain text.");
@@ -9,20 +29,7 @@ export function compileRule(rule) {
       throw new Error(
         "Enter a domain such as example.com, without a URL or wildcard.",
       );
-    let host;
-    try {
-      host = new URL(`https://${value}`).hostname
-        .toLowerCase()
-        .replace(/\.$/, "");
-    } catch {
-      throw new Error("Enter a valid domain.");
-    }
-    if (
-      !host.includes(".") ||
-      !/^[a-z0-9.-]+$/.test(host) ||
-      host.split(".").some((x) => !x || x.startsWith("-") || x.endsWith("-"))
-    )
-      throw new Error("Enter a valid domain.");
+    const host = normalizeDomain(value);
     return (url) => {
       try {
         const h = new URL(url).hostname.toLowerCase().replace(/\.$/, "");
@@ -51,16 +58,57 @@ export function compileRule(rule) {
 }
 
 export function createMatcher(settings) {
-  const exclusions = settings.exclusions.map(compileRule);
-  const lists = settings.lists
-    .filter((x) => x.enabled)
-    .map((list) => ({ name: list.name, rules: list.rules.map(compileRule) }));
+  const protectedDomains = new Set();
+  const protectedPatterns = [];
+  for (const rule of settings.exclusions) {
+    if (rule.type === "domain")
+      protectedDomains.add(normalizeDomain(rule.value.trim()));
+    else protectedPatterns.push(compileRule(rule));
+  }
+  const domains = new Map();
+  const patterns = [];
+  const lists = settings.lists.filter((list) => list.enabled);
+  lists.forEach((list, index) => {
+    const matchers = [];
+    for (const rule of list.rules) {
+      if (rule.type === "domain") {
+        const domain = normalizeDomain(rule.value.trim());
+        if (!domains.has(domain)) domains.set(domain, index);
+      } else matchers.push(compileRule(rule));
+    }
+    if (matchers.length) patterns.push({ index, matchers });
+  });
   return {
     explain(url) {
-      if (exclusions.some((match) => match(url)))
+      let host;
+      try {
+        host = new URL(url).hostname.toLowerCase().replace(/\.$/, "");
+      } catch {
+        host = "";
+      }
+      let first = Infinity;
+      for (let suffix = host; suffix;) {
+        if (protectedDomains.has(suffix))
+          return { matched: false, excluded: true, list: null };
+        first = Math.min(first, domains.get(suffix) ?? Infinity);
+        const dot = suffix.indexOf(".");
+        if (dot < 0) break;
+        suffix = suffix.slice(dot + 1);
+      }
+      if (protectedPatterns.some((match) => match(url)))
         return { matched: false, excluded: true, list: null };
-      const list = lists.find((x) => x.rules.some((match) => match(url)));
-      return { matched: !!list, excluded: false, list: list?.name ?? null };
+      for (const group of patterns) {
+        if (group.index >= first) break;
+        if (group.matchers.some((match) => match(url))) {
+          first = group.index;
+          break;
+        }
+      }
+      return {
+        matched: first !== Infinity,
+        excluded: false,
+        list: lists[first]?.name ?? null,
+      };
     },
   };
 }

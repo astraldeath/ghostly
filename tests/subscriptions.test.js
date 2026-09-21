@@ -59,7 +59,7 @@ test("subscription URLs reject non-HTTPS, credentials and fragments", () => {
 
 test("daily checks skip recent checks but catch up after a restart", async () => {
   let requests = 0;
-  const { manager, data } = fixture(async () => {
+  const { manager } = fixture(async () => {
     requests++;
     return new Response("example.com");
   });
@@ -68,7 +68,7 @@ test("daily checks skip recent checks but catch up after a restart", async () =>
   assert.equal(requests, 1);
   await manager.check(lists, undefined, true);
   assert.equal(requests, 1);
-  data.subscriptionChecks.a.checkedAt -= 86400001;
+  manager.now = () => 86400001 + 123;
   await manager.check(lists, undefined, true);
   assert.equal(requests, 2);
 });
@@ -159,5 +159,5 @@ test("download body limit is enforced even without content length", async () => 
   const { manager } = fixture(
     async () => new Response("a".repeat(MAX_LIST_BYTES + 1)),
   );
-  await assert.rejects(manager.fetchList("https://example.com/list"), /256 KB/);
+  await assert.rejects(manager.fetchList("https://example.com/list"), /16 MiB/);
 });

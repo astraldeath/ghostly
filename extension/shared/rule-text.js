@@ -1,11 +1,15 @@
 import { compileRule, legacyRule } from "./rules.js";
+import { checkRuleCounts, MAX_EDITOR_BYTES } from "./limits.js";
 
 export function formatRuleText(rules) {
   return rules.map((rule) => `${rule.type}: ${rule.value}`).join("\n");
 }
 
 export function parseRuleText(text) {
+  if (new TextEncoder().encode(text).length > MAX_EDITOR_BYTES)
+    throw new Error("Editor text exceeds 64 MiB.");
   const rules = [];
+  const counts = { domains: 0, patterns: 0 };
   for (const [index, line] of text.split(/\r?\n/).entries()) {
     const value = line.trim();
     if (!value || value.startsWith("#")) continue;
@@ -19,7 +23,7 @@ export function parseRuleText(text) {
       throw new Error(`Line ${index + 1}: ${error.message}`);
     }
     rules.push(rule);
-    if (rules.length > 1000) throw new Error("Use no more than 1000 rules.");
+    checkRuleCounts([rule], counts);
   }
   return rules;
 }

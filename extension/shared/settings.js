@@ -1,8 +1,9 @@
 import { compileRule, legacyRule } from "./rules.js";
 import { subscriptionUrl } from "./subscriptions.js";
+import { checkRuleCounts, MAX_BACKUP_BYTES } from "./limits.js";
+export { MAX_BACKUP_BYTES } from "./limits.js";
 
 export const SCHEMA_VERSION = 2;
-export const MAX_BACKUP_BYTES = 1048576;
 export function defaults() {
   return {
     version: SCHEMA_VERSION,
@@ -37,7 +38,7 @@ export function validateSettings(input) {
   )
     throw new Error("Too many lists or exclusions.");
   const ids = new Set();
-  let count = s.exclusions.length;
+  const counts = checkRuleCounts(s.exclusions);
   for (const list of s.lists) {
     if (!list || typeof list.id !== "string" || !list.id || ids.has(list.id))
       throw new Error("List IDs must be unique.");
@@ -51,7 +52,7 @@ export function validateSettings(input) {
     if (typeof list.enabled !== "boolean" || !Array.isArray(list.rules))
       throw new Error("Invalid list.");
     list.name = list.name.trim();
-    count += list.rules.length;
+    checkRuleCounts(list.rules, counts);
     list.rules.forEach((rule, i) => {
       try {
         compileRule(rule);
@@ -60,7 +61,6 @@ export function validateSettings(input) {
       }
     });
   }
-  if (count > 1000) throw new Error("Use no more than 1000 rules in total.");
   s.exclusions.forEach((rule, i) => {
     try {
       compileRule(rule);
@@ -134,7 +134,7 @@ export function parseBackup(text) {
     typeof text !== "string" ||
     new TextEncoder().encode(text).length > MAX_BACKUP_BYTES
   )
-    throw new Error("Backup is too large (maximum 1 MB).");
+    throw new Error("Backup is too large (maximum 64 MiB).");
   let data;
   try {
     data = JSON.parse(text);

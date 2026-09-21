@@ -17,23 +17,47 @@ export function isolatedMatcher(settings) {
           pendingReject = null;
           error ? reject(error) : resolve(result);
         };
-        timer = setTimeout(() => {
-          worker.terminate();
-          worker = null;
-          first = true;
-          finish(
-            new Error("A regex took too long. Simplify your advanced rules."),
+        const timeout = (initializing) => {
+          clearTimeout(timer);
+          timer = setTimeout(
+            () => {
+              worker.terminate();
+              worker = null;
+              first = true;
+              finish(
+                new Error(
+                  initializing
+                    ? "List indexing took too long. Use a smaller list."
+                    : "A regex took too long. Simplify your advanced rules.",
+                ),
+              );
+            },
+            initializing ? 30000 : 1500,
           );
-        }, 1500);
-        worker.onmessage = ({ data }) =>
-          finish(data.error ? new Error(data.error) : null, data.result);
+        };
+        timeout(first);
+        worker.onmessage = ({ data }) => {
+          if (data.ready) {
+            timeout(false);
+            worker.postMessage({ url });
+          } else finish(data.error ? new Error(data.error) : null, data.result);
+        };
         worker.onerror = () => {
           worker.terminate();
           worker = null;
           first = true;
           finish(new Error("Rule evaluation failed."));
         };
-        worker.postMessage({ settings: first ? settings : undefined, url });
+        worker.postMessage(
+          first
+            ? {
+                settings: {
+                  lists: settings.lists.filter((list) => list.enabled),
+                  exclusions: settings.exclusions,
+                },
+              }
+            : { url },
+        );
         first = false;
       });
     },

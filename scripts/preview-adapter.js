@@ -107,8 +107,11 @@ globalThis.browser = {
       try {
         let result;
         switch (message.type) {
+          case "getStatus":
+            result = controller.getStatus();
+            break;
           case "getSubscriptions":
-            result = await subscriptions.getStates();
+            result = await subscriptions.getStates(message.summary);
             break;
           case "fetchSubscription":
             result = await subscriptions.fetchList(message.url);

@@ -6,10 +6,12 @@ import {
 } from "../shared/settings.js";
 import { isolatedMatcher } from "../shared/isolated-matcher.js";
 import { formatRuleText, parseRuleText } from "../shared/rule-text.js";
+import { ROW_EDITOR_LIMIT, MAX_LIST_BYTES } from "../shared/limits.js";
 import {
   subscriptionUrl,
   subscriptionPermission,
   ruleChanges,
+  parseList,
 } from "../shared/subscriptions.js";
 import {
   $,
@@ -31,6 +33,111 @@ let editorRevision = 0;
 let editVersion = 0;
 let subscriptionStates = {};
 const subscriptionViews = new Map();
+const largeRuleSets = new WeakMap();
+function pagedText(items, readOnly, onChange = () => {}) {
+  const panel = element("div");
+  const pages = [];
+  for (let i = 0; i < items.length; i += 1000)
+    pages.push(items.slice(i, i + 1000));
+  if (!pages.length) pages.push([]);
+  let page = 0;
+  const controls = element("div", { class: "row" });
+  const previous = element(
+    "button",
+    { type: "button", class: "small-button" },
+    "Previous",
+  );
+  const next = element(
+    "button",
+    { type: "button", class: "small-button" },
+    "Next",
+  );
+  const count = element("span", { class: "help" });
+  const text = element("textarea", {
+    class: "rule-text",
+    rows: "12",
+    spellcheck: "false",
+    "aria-label": readOnly ? "Subscription rules page" : "List rules page",
+  });
+  text.readOnly = readOnly;
+  let edited = false;
+  text.addEventListener("input", () => {
+    edited = true;
+    onChange();
+  });
+  const commitPage = () => {
+    if (!readOnly && edited) {
+      const parsed = parseRuleText(text.value);
+      if (parsed.length > 1000)
+        throw new Error("Use no more than 1000 rules on each editor page.");
+      pages[page] = parsed;
+      edited = false;
+    }
+  };
+  const render = () => {
+    text.value = formatRuleText(pages[page]);
+    count.textContent = `Page ${page + 1} of ${pages.length} · up to 1,000 rules per page`;
+    previous.disabled = page === 0;
+    next.disabled = page === pages.length - 1;
+  };
+  const move = (delta) => {
+    try {
+      commitPage();
+      page += delta;
+      render();
+    } catch (error) {
+      showMessage(error.message, true);
+      text.focus();
+    }
+  };
+  previous.addEventListener("click", () => move(-1));
+  next.addEventListener("click", () => move(1));
+  controls.append(previous, count, next);
+  panel.append(controls, text);
+  if (!readOnly)
+    panel.append(
+      element(
+        "p",
+        { class: "help" },
+        "One rule per line. Lines starting with # are ignored. Save applies edits across all pages.",
+      ),
+    );
+  render();
+  return {
+    panel,
+    read: () => {
+      commitPage();
+      return pages.flat();
+    },
+  };
+}
+function setRuleRows(container, items, readOnly = false) {
+  if (items.length > ROW_EDITOR_LIMIT) {
+    largeRuleSets.set(container, items);
+    container.replaceChildren(
+      element(
+        "p",
+        { class: "help" },
+        `${new Intl.NumberFormat().format(items.length)} rules.${readOnly ? " Subscription rules are read-only." : " Open Text mode to edit."}`,
+      ),
+    );
+    if (readOnly) {
+      const view = element("details");
+      view.append(element("summary", {}, "View all rules"));
+      view.addEventListener("toggle", () => {
+        if (!view.open || view.querySelector("textarea")) return;
+        view.append(pagedText(items, true).panel);
+      });
+      container.append(view);
+    }
+  } else {
+    largeRuleSets.delete(container);
+    container.replaceChildren(...items.map((rule) => ruleRow(rule)));
+    if (readOnly)
+      for (const control of container.querySelectorAll("input, select, button"))
+        control.disabled = true;
+  }
+}
 
 function subscriptionView(list, rules) {
   const box = element("div", { class: "subscription-info" });
@@ -73,22 +180,47 @@ function subscriptionView(list, rules) {
       ["Add", changes.added],
       ["Remove", changes.removed],
     ])
-      for (const rule of items)
+      for (const rule of items.slice(0, 100))
         entries.append(
           element("li", {}, `${label}: ${rule.type} — ${rule.value}`),
         );
     details.append(entries);
+    if (changes.added.length > 100 || changes.removed.length > 100)
+      details.append(
+        element(
+          "p",
+          { class: "help" },
+          "Showing the first 100 additions and removals.",
+        ),
+      );
+    const exportChanges = element(
+      "button",
+      { type: "button", class: "small-button" },
+      "Export all changes",
+    );
+    exportChanges.addEventListener("click", () => {
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(changes, null, 2)], {
+          type: "application/json",
+        }),
+      );
+      const link = element("a", {
+        href: url,
+        download: "ghostly-list-changes.json",
+      });
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    details.append(exportChanges);
     const apply = element(
       "button",
       { type: "button", class: "small-button" },
       "Use update",
     );
     apply.addEventListener("click", () => {
-      rules.replaceChildren(
-        ...update.candidate.rules.map((rule) => ruleRow(rule)),
-      );
-      for (const control of rules.querySelectorAll("input, select, button"))
-        control.disabled = true;
+      setRuleRows(rules, update.candidate.rules, true);
       markDirty();
       render();
       showMessage(
@@ -211,7 +343,7 @@ function listCard(
   label.append(enabled, document.createTextNode("Enabled"));
   header.append(name, label);
   const rules = element("div", { class: "rules" });
-  list.rules.forEach((rule) => rules.append(ruleRow(rule)));
+  setRuleRows(rules, list.rules, !!list.sourceUrl);
   const footer = element("div", { class: "list-footer row between" });
   const add = element("button", { class: "text-button" }, "Add rule");
   add.prepend(icon("plus"));
@@ -235,7 +367,22 @@ function listCard(
   footer.append(add);
   const body = element("div", { id: `list-body-${crypto.randomUUID()}` });
   body.append(rules, footer);
-  if (!list.sourceUrl) {
+  if (!list.sourceUrl && list.rules.length > ROW_EDITOR_LIMIT) {
+    footer.hidden = true;
+    const edit = element(
+      "button",
+      { type: "button", class: "small-button" },
+      "Edit text",
+    );
+    edit.addEventListener("click", () => {
+      const editor = pagedText(readRules(rules), false, markDirty);
+      largeRuleSets.set(rules, editor.read);
+      rules.replaceChildren(editor.panel);
+      edit.remove();
+    });
+    body.prepend(edit);
+  }
+  if (!list.sourceUrl && list.rules.length <= ROW_EDITOR_LIMIT) {
     const modeKey = `ghostly:editor:${list.id}`;
     const modes = element("div", {
       class: "editor-modes",
@@ -282,7 +429,11 @@ function listCard(
           textarea.focus();
           return;
         }
-        rules.replaceChildren(...parsed.map((rule) => ruleRow(rule)));
+        if (parsed.length > ROW_EDITOR_LIMIT) {
+          showMessage("Lists above 200 rules use Text mode.", true);
+          return;
+        }
+        setRuleRows(rules, parsed);
       } else if (mode === "text" && card.dataset.editorMode !== "text") {
         textarea.value = formatRuleText(readRules(rules));
       }
@@ -375,6 +526,10 @@ function addList() {
   card.querySelector("input").focus();
 }
 function readRules(container) {
+  if (largeRuleSets.has(container)) {
+    const source = largeRuleSets.get(container);
+    return typeof source === "function" ? source() : source;
+  }
   return [...container.querySelectorAll(".rule-row")].map((row) => ({
     type: row.querySelector("select").value,
     value: row.querySelector("input").value.trim(),
@@ -699,7 +854,7 @@ $("import-file").addEventListener("change", () =>
     $("import-file").value = "";
     if (!file) return;
     if (file.size > MAX_BACKUP_BYTES)
-      throw new Error("Backup is too large (maximum 1 MB).");
+      throw new Error("Backup is too large (maximum 64 MiB).");
     const text = await file.text();
     const imported = parseBackup(text);
     renderEditor(imported);
@@ -753,13 +908,44 @@ $("subscribe").addEventListener("click", () => {
   });
 });
 
+$("load-list-file").addEventListener("click", () => $("list-file").click());
+$("list-file").addEventListener("change", () =>
+  act($("load-list-file"), async () => {
+    const file = $("list-file").files[0];
+    $("list-file").value = "";
+    if (!file) return;
+    if (file.size > MAX_LIST_BYTES) throw new Error("List exceeds 16 MiB.");
+    const list = parseList(await file.text());
+    if (list.name === "Online list") list.name = file.name.slice(0, 80);
+    $("lists").querySelector(".empty")?.remove();
+    $("lists").append(
+      listCard({ ...list, id: crypto.randomUUID(), enabled: false }),
+    );
+    markDirty();
+    showMessage("List loaded and disabled. Save when ready.");
+  }),
+);
+
 async function refresh() {
-  const checks = await request("getSubscriptions");
-  if (JSON.stringify(checks) !== JSON.stringify(subscriptionStates)) {
-    subscriptionStates = checks;
+  const checks = await request("getSubscriptions", { summary: true });
+  const current = Object.fromEntries(
+    Object.entries(subscriptionStates).map(([id, value]) => [
+      id,
+      {
+        sourceUrl: value.sourceUrl,
+        checkedAt: value.checkedAt,
+        error: value.error,
+      },
+    ]),
+  );
+  if (JSON.stringify(checks) !== JSON.stringify(current)) {
+    subscriptionStates = await request("getSubscriptions");
     for (const render of subscriptionViews.values()) render();
   }
-  const next = await request("getState");
+  let next = await request("getStatus");
+  if (state && next.settings.revision === state.settings.revision)
+    next.settings = state.settings;
+  else next = await request("getState");
   if (state && next.settings.revision !== state.settings.revision) {
     previewToken = null;
     $("preview-results").hidden = true;

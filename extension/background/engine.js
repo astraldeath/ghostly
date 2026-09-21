@@ -76,6 +76,19 @@ export class CleanupController {
       recoveryError: this.recoveryError,
     });
   }
+  getStatus() {
+    return structuredClone({
+      settings: {
+        revision: this.settings.revision,
+        paused: this.settings.paused,
+        theme: this.settings.theme,
+      },
+      stats: this.stats,
+      job: this.job,
+      busy: this.busy || this.saving,
+      recoveryError: this.recoveryError,
+    });
+  }
 
   async saveSettings(input) {
     if (this.saving)
@@ -200,11 +213,10 @@ export class CleanupController {
       throw new Error("Unknown cleanup mode.");
     if (automatic && this.settings.paused) return { count: 0 };
     this.busy = true;
-    const settings = structuredClone(this.settings);
+    const settings = this.settings;
     const revision = settings.revision;
     const generation = this.generation;
-    this.matcher?.dispose?.();
-    const matcher = (this.matcher = this.matcherFactory(settings));
+    const matcher = this.matcher;
     const startedAt = resume ? this.job.startedAt : this.now();
     const cutoff = startedAt - settings.retentionDays * DAY;
     const job = resume
@@ -329,8 +341,10 @@ export class CleanupController {
       throw error;
     } finally {
       this.busy = false;
-      matcher.dispose?.();
-      this.matcher = this.matcherFactory(this.settings);
+      if (revision !== this.settings.revision) {
+        matcher.dispose?.();
+        this.matcher = this.matcherFactory(this.settings);
+      }
     }
   }
 }

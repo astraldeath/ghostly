@@ -6,7 +6,7 @@ Ghostly checks saved subscriptions every 24 hours. Expanded lists show their sou
 
 The cached active rules are included in settings backups and work offline. Restored subscriptions require host permission before updates can be fetched. A failed download does not replace active rules. Updates invalidate cleanup previews when saved, through the existing settings revision mechanism.
 
-Publish either UTF-8 plain text (one domain per line; blank lines and lines beginning with # or ! are ignored), or JSON:
+Publish either UTF-8 plain text (one domain per line, optionally prefixed with `domain:`; blank lines and lines beginning with # or ! are ignored), or JSON:
 
 ```json
 {
@@ -19,7 +19,7 @@ Publish either UTF-8 plain text (one domain per line; blank lines and lines begi
 }
 ```
 
-JSON accepts Ghostly domain, wildcard and regex rules. uBlock/Adblock and hosts-file syntax are not supported. Unsupported or invalid rules reject the entire download. Limits: 256 KB per download, 1,000 rules per list, and the existing 1,000 total rules across saved settings. Redirects are rejected; use the final raw HTTPS URL. Downloads time out after 15 seconds, omit credentials and referrers, and require source-host permission. List hosts can observe the request and IP address, but no browsing history is sent.
+JSON accepts Ghostly domain, wildcard and regex rules. uBlock/Adblock and hosts-file syntax are not supported. Unsupported or invalid rules reject the entire download. Limits: 16 MiB per download, 500,000 domain rules, and 1,000 wildcard/regex rules combined across saved settings. Large lists use paged text views; see [large-list support](LARGE-LISTS.md). Redirects are rejected; use the final raw HTTPS URL. Downloads time out after 15 seconds, omit credentials and referrers, and require source-host permission. List hosts can observe the request and IP address, but no browsing history is sent.
 
 The development browser preview uses a synthetic subscription response; it never contacts the supplied host. Network behavior is covered separately by automated tests.
 

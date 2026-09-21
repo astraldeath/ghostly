@@ -1,6 +1,7 @@
 import { compileRule } from "./rules.js";
+import { checkRuleCounts, MAX_LIST_BYTES } from "./limits.js";
+export { MAX_LIST_BYTES } from "./limits.js";
 
-export const MAX_LIST_BYTES = 262144;
 export function subscriptionPermission(value) {
   return `https://${new URL(subscriptionUrl(value)).hostname}/*`;
 }
@@ -17,7 +18,7 @@ export function subscriptionUrl(value) {
 }
 export function parseList(text) {
   if (new TextEncoder().encode(text).length > MAX_LIST_BYTES)
-    throw new Error("List exceeds 256 KB.");
+    throw new Error("List exceeds 16 MiB.");
   let name = "Online list";
   let rules;
   if (text.trimStart().startsWith("{")) {
@@ -44,10 +45,15 @@ export function parseList(text) {
       .split(/\r?\n/)
       .map((x) => x.trim())
       .filter((x) => x && !x.startsWith("#") && !x.startsWith("!"))
-      .map((value) => ({ type: "domain", value }));
+      .map((value) => {
+        const explicit = /^(domain|wildcard|regex):\s*(.*)$/.exec(value);
+        return explicit
+          ? { type: explicit[1], value: explicit[2] }
+          : { type: "domain", value };
+      });
   }
-  if (!rules.length || rules.length > 1000)
-    throw new Error("A list must contain 1–1000 rules.");
+  if (!rules.length) throw new Error("A list must contain at least one rule.");
+  checkRuleCounts(rules);
   const unique = new Map();
   for (const rule of rules) {
     compileRule(rule);
@@ -96,7 +102,7 @@ export class Subscriptions {
           const { done, value: chunk } = await reader.read();
           if (done) break;
           size += chunk.byteLength;
-          if (size > MAX_LIST_BYTES) throw new Error("List exceeds 256 KB.");
+          if (size > MAX_LIST_BYTES) throw new Error("List exceeds 16 MiB.");
           chunks.push(chunk);
         }
       } finally {
@@ -116,9 +122,19 @@ export class Subscriptions {
       clearTimeout(timeout);
     }
   }
-  async getStates() {
-    return (
-      (await this.storage.get("subscriptionChecks")).subscriptionChecks || {}
+  async getStates(summary = false) {
+    this.states ??=
+      (await this.storage.get("subscriptionChecks")).subscriptionChecks || {};
+    if (!summary) return this.states;
+    return Object.fromEntries(
+      Object.entries(this.states).map(([id, state]) => [
+        id,
+        {
+          sourceUrl: state.sourceUrl,
+          checkedAt: state.checkedAt,
+          error: state.error,
+        },
+      ]),
     );
   }
   async check(lists, onlyId, dueOnly = false) {
@@ -153,6 +169,7 @@ export class Subscriptions {
         }
       }
       await this.storage.set({ subscriptionChecks: states });
+      this.states = states;
       return states;
     } finally {
       this.busy = false;

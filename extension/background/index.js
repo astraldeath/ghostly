@@ -71,10 +71,12 @@ browser.runtime.onMessage.addListener((message, sender) => {
   return ready
     .then(async () => {
       switch (message?.type) {
+        case "getStatus":
+          return controller.getStatus();
         case "fetchSubscription":
           return subscriptions.fetchList(message.url);
         case "getSubscriptions":
-          return subscriptions.getStates();
+          return subscriptions.getStates(message.summary);
         case "checkSubscription":
           return subscriptions.check(controller.settings.lists, message.id);
         case "getState":

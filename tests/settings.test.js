@@ -71,7 +71,7 @@ test("malformed imports cannot drop invalid protections or accept unsupported ve
   const s = migrateSettings({});
   s.exclusions = [{ type: "domain", value: 42 }];
   assert.throws(() => validateSettings(s), /text/i);
-  assert.throws(() => parseBackup("x".repeat(1048577)), /large/i);
+  assert.throws(() => parseBackup("x".repeat(64 * 1024 * 1024 + 1)), /large/i);
 });
 test("duplicate IDs and fractional retention are rejected", () => {
   const s = migrateSettings({ patterns: ["*x*"] });

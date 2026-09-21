@@ -8,6 +8,9 @@ import webExt from "web-ext";
 const sourceDir = path.resolve(".local-backup/firefox-smoke-" + randomUUID());
 await mkdir(sourceDir, { recursive: true });
 await cp("extension", sourceDir, { recursive: true });
+const largeListPath = process.env.GHOSTLY_TEST_LIST;
+if (largeListPath)
+  await cp(path.resolve(largeListPath), path.join(sourceDir, "large-list.txt"));
 let resolveResult;
 const result = new Promise((resolve) => {
   resolveResult = resolve;
@@ -51,7 +54,7 @@ await writeFile(
   path.join(sourceDir, "smoke.html"),
   '<!doctype html><html><head><meta charset="utf-8"><title>Ghostly disposable-profile smoke test</title><script type="module" src="smoke.js"></script></head><body>Testing synthetic history in a disposable Firefox profile.</body></html>',
 );
-const smoke = async function (reportUrl) {
+const smoke = async function (reportUrl, largeList) {
   const checks = [];
   const assert = (condition, label) => {
     if (!condition) throw new Error(label);
@@ -124,6 +127,47 @@ const smoke = async function (reportUrl) {
       state.stats.totalDeleted === 1 && state.job.state === "complete",
       "completion and stats persist",
     );
+    if (largeList) {
+      const { parseList } = await import("./shared/subscriptions.js");
+      const text = await (
+        await fetch(browser.runtime.getURL("large-list.txt"))
+      ).text();
+      const started = performance.now();
+      const list = parseList(text);
+      list.rules.push({ type: "domain", value: "large.ghostly-test.invalid" });
+      const saved = await call("saveSettings", {
+        settings: {
+          ...state.settings,
+          lists: [{ ...list, id: "large", enabled: true }],
+        },
+      });
+      assert(
+        saved.settings.lists[0].rules.length === list.rules.length,
+        "large list saved through Firefox storage",
+      );
+      const stored = await browser.storage.local.get("settings");
+      assert(
+        stored.settings.lists[0].rules.length === list.rules.length,
+        "large list reads back from storage",
+      );
+      assert(
+        JSON.stringify(await call("getStatus")).length < 3000,
+        "status polling does not transfer large lists",
+      );
+      await browser.history.addUrl({
+        url: "https://large.ghostly-test.invalid/check",
+      });
+      const first = await call("preview", { mode: "patterns" });
+      assert(
+        first.count === 1,
+        "large indexed list matches synthetic history with protections intact",
+      );
+      const again = await call("preview", { mode: "patterns" });
+      assert(again.count === 1, "large matcher supports repeated previews");
+      checks.push(
+        `large-list load, save and previews: ${Math.round(performance.now() - started)} ms`,
+      );
+    }
     await fetch(reportUrl, {
       method: "POST",
       body: JSON.stringify({ ok: true, checks, firefox: navigator.userAgent }),
@@ -137,7 +181,7 @@ const smoke = async function (reportUrl) {
 };
 await writeFile(
   path.join(sourceDir, "smoke.js"),
-  `(${smoke.toString()})(${JSON.stringify(`http://127.0.0.1:${port}`)});`,
+  `(${smoke.toString()})(${JSON.stringify(`http://127.0.0.1:${port}`)}, ${Boolean(largeListPath)});`,
 );
 let runner;
 let timeout;

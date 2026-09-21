@@ -45,6 +45,8 @@ The preview uses the production UI and cleanup engine with a synthetic browser a
 
 Advanced regex runs in a worker with a 1.5-second evaluation deadline. Timeouts stop the operation and report an error. Keep expressions simple. Blank/invalid rules cannot be saved. An empty list or all-disabled lists never activate fallback rules.
 
+For large domain lists, use **Import list file**. Up to 500,000 domain rules are indexed by hostname; wildcard/regex rules have a separate 1,000-rule cap. See [limits and benchmarks](docs/LARGE-LISTS.md).
+
 ## Repository map
 
 - `extension/shared/`: settings schema, rules, isolated matcher, UI helpers and theme.
