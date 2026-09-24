@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix online list downloads failing with a Firefox Window binding error.
 - Remove icon generation tooling; maintain the bundled Lucide-derived SVG assets directly.
 
 - Use the same text rule syntax for online subscriptions, file imports and local editing.

@@ -65,7 +65,12 @@ export function ruleChanges(before, after) {
 }
 
 export class Subscriptions {
-  constructor({ storage, permissions, fetcher = fetch, now = Date.now }) {
+  constructor({
+    storage,
+    permissions,
+    fetcher = globalThis.fetch.bind(globalThis),
+    now = Date.now,
+  }) {
     Object.assign(this, { storage, permissions, fetcher, now });
     this.busy = false;
   }

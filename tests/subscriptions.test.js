@@ -115,6 +115,17 @@ function fixture(fetcher, allowed = true) {
     }),
   };
 }
+test("default subscription fetch preserves the browser global receiver", async (t) => {
+  t.mock.method(globalThis, "fetch", async function (url) {
+    assert.equal(this, globalThis);
+    assert.equal(url, "https://example.com/list");
+    return new Response("domain: example.com");
+  });
+  const { manager } = fixture();
+  const result = await manager.fetchList("https://example.com/list");
+  assert.deepEqual(result.rules, [{ type: "domain", value: "example.com" }]);
+});
+
 test("downloads omit credentials, refuse redirects and require host permission", async () => {
   const { manager } = fixture(async (url, options) => {
     assert.equal(options.credentials, "omit");
